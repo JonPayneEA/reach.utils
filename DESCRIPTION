@@ -1,0 +1,24 @@
+Package: reach.utils
+Title: Utility Functions for the Flode Ecosystem
+Version: 0.1.0
+Authors@R: person("Forecasting and Warning Team",
+    email = "forecasting@environment-agency.gov.uk",
+    role = c("aut", "cre"))
+Description: Provides shared utility functions for the reaches package
+    ecosystem, including datetime helpers, YAML/JSON configuration loading,
+    and structured console and file logging via cli.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Depends:
+    R (>= 4.2.0)
+Imports:
+    lubridate,
+    yaml,
+    cli (>= 3.6.0)
+Suggests:
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+URL: https://github.com/JonPayneEA/reach.utils
+BugReports: https://github.com/JonPayneEA/reach.utils/issues
