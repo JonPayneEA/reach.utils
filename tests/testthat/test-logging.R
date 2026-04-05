@@ -43,3 +43,18 @@ test_that("log_timed returns the expression result invisibly", {
 test_that("log_timed logs a message containing the label", {
   expect_message(log_timed(Sys.sleep(0), "test step"), regexp = "test step")
 })
+
+test_that("log_progress returns invisibly NULL", {
+  expect_invisible(log_progress(1L, 10L, "site ABCD"))
+})
+
+test_that("log_progress message contains i, n, and label", {
+  expect_message(
+    log_progress(3L, 47L, label = "ABCD"),
+    regexp = "3/47"
+  )
+})
+
+test_that("log_section returns invisibly NULL", {
+  expect_invisible(log_section("Test section"))
+})

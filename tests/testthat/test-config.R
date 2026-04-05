@@ -79,3 +79,52 @@ test_that("config_val_as errors on uncoercible value", {
   cfg <- list(timeout = "not-a-number")
   expect_error(config_val_as(cfg, "timeout", "integer"))
 })
+
+test_that("config_from_env builds a flat config list from env vars", {
+  Sys.setenv(REACH__TIMEOUT = "30")
+  on.exit(Sys.unsetenv("REACH__TIMEOUT"))
+  cfg <- config_from_env("REACH")
+  expect_equal(cfg$timeout, "30")
+})
+
+test_that("config_from_env builds nested list from double-underscore vars", {
+  Sys.setenv(REACH__DB__HOST = "localhost", REACH__DB__PORT = "5432")
+  on.exit(Sys.unsetenv(c("REACH__DB__HOST", "REACH__DB__PORT")))
+  cfg <- config_from_env("REACH")
+  expect_equal(cfg$db$host, "localhost")
+  expect_equal(cfg$db$port, "5432")
+})
+
+test_that("config_from_env returns empty list and warns when no vars match", {
+  expect_warning(
+    result <- config_from_env("ZZZNOMATCH"),
+    regexp = "ZZZNOMATCH"
+  )
+  expect_equal(result, list())
+})
+
+test_that("expand_config_paths expands relative slash paths", {
+  cfg    <- list(input = "data/flow.csv", host = "localhost")
+  result <- expand_config_paths(cfg, "/srv/pipeline")
+  expect_true(startsWith(result$input, "/"))
+  expect_true(grepl("data/flow.csv", result$input))
+})
+
+test_that("expand_config_paths leaves non-path values unchanged", {
+  cfg    <- list(host = "localhost", port = 5432L)
+  result <- expand_config_paths(cfg, "/srv/pipeline")
+  expect_equal(result$host, "localhost")
+  expect_equal(result$port, 5432L)
+})
+
+test_that("expand_config_paths expands dot-relative paths", {
+  cfg    <- list(out = "./outputs/results.csv")
+  result <- expand_config_paths(cfg, "/srv/pipeline")
+  expect_equal(result$out, "/srv/pipeline/outputs/results.csv")
+})
+
+test_that("expand_config_paths leaves URLs unchanged", {
+  cfg    <- list(api = "https://example.com/data")
+  result <- expand_config_paths(cfg, "/srv/pipeline")
+  expect_equal(result$api, "https://example.com/data")
+})

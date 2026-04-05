@@ -59,3 +59,55 @@ check_file_exists <- function(path) {
 resolve_path <- function(base, ...) {
   normalizePath(file.path(base, ...), mustWork = FALSE)
 }
+
+#' Find the most recently modified file matching a pattern
+#'
+#' Lists files in `dir` whose names match `pattern` (a glob) and returns the
+#' path of the one with the latest modification time. Useful in pipelines that
+#' consume "latest output" files without hardcoded names.
+#'
+#' @param dir Path to the directory to search.
+#' @param pattern A glob pattern, e.g. `"*.csv"` or `"flow_*.parquet"`.
+#'   Defaults to `"*"` (all files).
+#'
+#' @return A single character path string.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' find_latest_file("outputs/", "flow_*.csv")
+#' }
+find_latest_file <- function(dir, pattern = "*") {
+  if (!dir.exists(dir)) {
+    cli::cli_abort("Directory not found: {.path {dir}}")
+  }
+  files <- list.files(dir, pattern = glob2rx(pattern), full.names = TRUE)
+  if (length(files) == 0L) {
+    cli::cli_abort(
+      "No files matching {.val {pattern}} found in {.path {dir}}"
+    )
+  }
+  files[which.max(file.mtime(files))]
+}
+
+#' Swap the extension of a file path
+#'
+#' Replaces the file extension of `path` with `ext`, leaving the directory and
+#' base name unchanged. Useful when deriving an output path from an input path
+#' (e.g. reading a `.csv` and writing a `.parquet`).
+#'
+#' @param path A character file path.
+#' @param ext The new extension, with or without a leading dot
+#'   (e.g. `"parquet"` or `".parquet"`).
+#'
+#' @return A character path with the extension replaced.
+#' @export
+#'
+#' @examples
+#' swap_ext("data/flow.csv", "parquet")   # "data/flow.parquet"
+#' swap_ext("outputs/run.tar.gz", "zip")  # "outputs/run.zip"
+swap_ext <- function(path, ext) {
+  ext  <- sub("^\\.+", "", ext)
+  base <- tools::file_path_sans_ext(path)
+  paste0(base, ".", ext)
+}

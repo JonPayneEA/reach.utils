@@ -210,3 +210,53 @@ format_duration <- function(seconds) {
     sprintf("%ds", s)
   }
 }
+
+#' Check whether a datetime vector forms a complete regular series
+#'
+#' Returns `TRUE` if `x` contains every expected timestamp between `from` and
+#' `to` at interval `by`, and `FALSE` otherwise. A natural companion to
+#' [detect_gaps()] for use in pipeline assertions.
+#'
+#' @param x A POSIXct vector (or character coercible via [as_utc()]).
+#' @param from Expected start datetime (POSIXct or character).
+#' @param to Expected end datetime (POSIXct or character).
+#' @param by Expected interval string, e.g. `"15 mins"`, `"1 hour"`.
+#'
+#' @return A single logical value.
+#' @export
+#'
+#' @examples
+#' x <- as_utc(c("2024-01-01 00:00", "2024-01-01 00:15", "2024-01-01 00:30"))
+#' is_complete_series(x, "2024-01-01 00:00", "2024-01-01 00:30", "15 mins")
+#' # [1] TRUE
+is_complete_series <- function(x, from, to, by) {
+  if (!inherits(x,    "POSIXct")) x    <- as_utc(x)
+  if (!inherits(from, "POSIXct")) from <- as_utc(from)
+  if (!inherits(to,   "POSIXct")) to   <- as_utc(to)
+  expected <- seq(from, to, by = by)
+  # Round to whole seconds before comparing to avoid floating-point mismatches
+  x_s <- round(as.numeric(x))
+  e_s <- round(as.numeric(expected))
+  all(e_s %in% x_s)
+}
+
+#' Snap a datetime vector to the nearest grid point
+#'
+#' Rounds each element of `x` to the nearest multiple of `unit`, completing
+#' the floor/round/ceiling trio alongside [floor_to()]. A thin wrapper around
+#' [lubridate::round_date()].
+#'
+#' @param x A POSIXct vector.
+#' @param unit A string accepted by [lubridate::round_date()], such as
+#'   `"15 minutes"`, `"1 hour"`, `"day"`.
+#'
+#' @return A POSIXct vector rounded to the nearest `unit`.
+#' @export
+#'
+#' @examples
+#' x <- as_utc("2024-01-15 06:37:22")
+#' snap_to_datetime(x, "15 minutes")  # rounds to 06:45
+#' snap_to_datetime(x, "1 hour")      # rounds to 07:00
+snap_to_datetime <- function(x, unit) {
+  lubridate::round_date(x, unit = unit)
+}

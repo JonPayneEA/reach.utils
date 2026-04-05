@@ -79,3 +79,26 @@ test_that("format_duration formats seconds only", {
 test_that("format_duration formats sub-second durations", {
   expect_match(format_duration(0.4), "^0\\.40s$")
 })
+
+test_that("is_complete_series returns TRUE for a complete series", {
+  x <- as_utc(c("2024-01-01 00:00", "2024-01-01 00:15", "2024-01-01 00:30"))
+  expect_true(is_complete_series(x, "2024-01-01 00:00", "2024-01-01 00:30",
+                                 "15 mins"))
+})
+
+test_that("is_complete_series returns FALSE when a timestamp is missing", {
+  x <- as_utc(c("2024-01-01 00:00", "2024-01-01 00:30"))
+  expect_false(is_complete_series(x, "2024-01-01 00:00", "2024-01-01 00:30",
+                                  "15 mins"))
+})
+
+test_that("snap_to_datetime rounds to the nearest interval", {
+  x   <- as_utc("2024-01-15 06:37:22")
+  out <- snap_to_datetime(x, "15 minutes")
+  expect_equal(format(out, "%H:%M", tz = "UTC"), "06:45")
+})
+
+test_that("snap_to_datetime returns a POSIXct vector", {
+  x <- as_utc("2024-01-15 06:37:22")
+  expect_s3_class(snap_to_datetime(x, "1 hour"), "POSIXct")
+})

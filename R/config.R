@@ -171,3 +171,94 @@ config_val_as <- function(cfg, key, type, default = NULL) {
   )
   result
 }
+
+#' Build a config list from environment variables
+#'
+#' Reads environment variables whose names start with `<PREFIX>__` and
+#' constructs a nested config list. Double underscores (`__`) in the variable
+#' name denote nesting levels; all keys are lowercased.
+#'
+#' For example, with `prefix = "REACH"`:
+#' - `REACH__DB__HOST=localhost` → `list(db = list(host = "localhost"))`
+#' - `REACH__TIMEOUT=30`        → `list(timeout = "30")`
+#'
+#' Values are always character strings; use [config_val_as()] to coerce types.
+#'
+#' @param prefix A character string prefix (case-insensitive), without trailing
+#'   underscores.
+#'
+#' @return A named list, or an empty list if no matching variables are found.
+#' @export
+#'
+#' @examples
+#' Sys.setenv(REACH__DB__HOST = "localhost", REACH__TIMEOUT = "30")
+#' config_from_env("REACH")
+#' Sys.unsetenv(c("REACH__DB__HOST", "REACH__TIMEOUT"))
+config_from_env <- function(prefix) {
+  pattern <- paste0("^", toupper(prefix), "__")
+  all_env  <- Sys.getenv()
+  matching <- all_env[grepl(pattern, names(all_env))]
+
+  if (length(matching) == 0L) {
+    cli::cli_warn(
+      "No environment variables found with prefix {.val {toupper(prefix)}__}"
+    )
+    return(list())
+  }
+
+  names(matching) <- sub(pattern, "", names(matching))
+
+  cfg <- list()
+  for (var in names(matching)) {
+    keys <- tolower(strsplit(var, "__", fixed = TRUE)[[1]])
+    cfg  <- .set_nested(cfg, keys, matching[[var]])
+  }
+  cfg
+}
+
+.set_nested <- function(lst, keys, value) {
+  if (length(keys) == 1L) {
+    lst[[keys]] <- value
+  } else {
+    child        <- if (is.null(lst[[keys[1]]])) list() else lst[[keys[1]]]
+    lst[[keys[1]]] <- .set_nested(child, keys[-1L], value)
+  }
+  lst
+}
+
+#' Expand relative paths in a config list
+#'
+#' Walks a config list recursively and resolves any character value that looks
+#' like a relative path (contains `/` and is not a URL or absolute path)
+#' against `base_dir`. Values that do not look like paths are left unchanged.
+#'
+#' @param cfg A named list, typically from [load_config()].
+#' @param base_dir The base directory to resolve relative paths against.
+#'   Defaults to the current working directory.
+#'
+#' @return A config list with relative path values expanded to absolute paths.
+#' @export
+#'
+#' @examples
+#' cfg <- list(input = "./data/flow.csv", db = list(host = "localhost"))
+#' expand_config_paths(cfg, "/srv/pipeline")
+expand_config_paths <- function(cfg, base_dir = getwd()) {
+  .expand_paths_recursive(cfg, base_dir)
+}
+
+.expand_paths_recursive <- function(x, base_dir) {
+  if (is.list(x)) {
+    lapply(x, .expand_paths_recursive, base_dir = base_dir)
+  } else if (is.character(x) && length(x) == 1L && .is_relative_path(x)) {
+    normalizePath(file.path(base_dir, x), mustWork = FALSE)
+  } else {
+    x
+  }
+}
+
+.is_relative_path <- function(x) {
+  grepl("^\\./|^\\.\\./", x) ||
+    (grepl("/", x, fixed = TRUE) &&
+       !grepl("^https?://", x) &&
+       !grepl("^/", x))
+}
