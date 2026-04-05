@@ -33,3 +33,49 @@ test_that("seq_datetime generates correct length sequence", {
   expect_length(s, 3L)
   expect_s3_class(s, "POSIXct")
 })
+
+test_that("water_year labels October onwards as the current year", {
+  x <- as_utc(c("2024-10-01", "2025-09-30"))
+  expect_equal(water_year(x), c(2024L, 2024L))
+})
+
+test_that("water_year labels pre-October as the previous year", {
+  x <- as_utc("2024-09-30")
+  expect_equal(water_year(x), 2023L)
+})
+
+test_that("detect_gaps returns zero rows when no gaps exist", {
+  x <- as_utc(c("2024-01-01 00:00", "2024-01-01 00:15", "2024-01-01 00:30"))
+  result <- detect_gaps(x, "15 mins")
+  expect_equal(nrow(result), 0L)
+})
+
+test_that("detect_gaps identifies a single gap correctly", {
+  x <- as_utc(c("2024-01-01 00:00", "2024-01-01 00:15",
+                "2024-01-01 01:00", "2024-01-01 01:15"))
+  result <- detect_gaps(x, "15 mins")
+  expect_equal(nrow(result), 1L)
+  expect_equal(result$n_missing, 2L)
+})
+
+test_that("detect_gaps returns empty data frame for fewer than 2 points", {
+  result <- detect_gaps(as_utc("2024-01-01"), "15 mins")
+  expect_equal(nrow(result), 0L)
+  expect_named(result, c("gap_start", "gap_end", "n_missing"))
+})
+
+test_that("format_duration formats hours, minutes, seconds", {
+  expect_equal(format_duration(8070), "2h 14m 30s")
+})
+
+test_that("format_duration formats minutes and seconds only", {
+  expect_equal(format_duration(90), "1m 30s")
+})
+
+test_that("format_duration formats seconds only", {
+  expect_equal(format_duration(45), "45s")
+})
+
+test_that("format_duration formats sub-second durations", {
+  expect_match(format_duration(0.4), "^0\\.40s$")
+})

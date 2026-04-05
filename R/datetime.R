@@ -109,3 +109,104 @@ seq_datetime <- function(from, to, by) {
   if (!inherits(to,   "POSIXct")) to   <- as_utc(to)
   seq(from, to, by = by)
 }
+
+#' Extract the EA hydrological water year
+#'
+#' Returns the Environment Agency water year for each datetime in `x`. The EA
+#' water year runs from 1 October to 30 September and is labelled by the year
+#' in which it begins (e.g. `2023-10-01` falls in water year 2023).
+#'
+#' @param x A POSIXct vector, or a character vector coercible via [as_utc()].
+#'
+#' @return An integer vector of water years.
+#' @export
+#'
+#' @examples
+#' water_year(as_utc(c("2024-09-30", "2024-10-01")))
+#' # [1] 2023 2024
+water_year <- function(x) {
+  if (!inherits(x, "POSIXct")) x <- as_utc(x)
+  yr  <- as.integer(format(x, "%Y", tz = "UTC"))
+  mon <- as.integer(format(x, "%m", tz = "UTC"))
+  ifelse(mon >= 10L, yr, yr - 1L)
+}
+
+#' Detect gaps in a regular datetime sequence
+#'
+#' Checks a POSIXct vector for intervals larger than the expected `by` step
+#' and returns a data frame describing each gap found. Useful for QA of
+#' sensor or telemetry data before processing.
+#'
+#' @param x A POSIXct vector, expected to be in ascending order.
+#' @param by Expected interval as a string accepted by [base::seq.POSIXt()],
+#'   e.g. `"15 mins"`, `"1 hour"`, `"1 day"`.
+#'
+#' @return A data frame with columns:
+#'   \describe{
+#'     \item{`gap_start`}{POSIXct — the last timestamp before the gap.}
+#'     \item{`gap_end`}{POSIXct — the first timestamp after the gap.}
+#'     \item{`n_missing`}{integer — number of expected timestamps absent.}
+#'   }
+#'   Returns zero rows if no gaps are detected.
+#' @export
+#'
+#' @examples
+#' x <- as_utc(c("2024-01-01 00:00", "2024-01-01 00:15",
+#'               "2024-01-01 01:00", "2024-01-01 01:15"))
+#' detect_gaps(x, "15 mins")
+detect_gaps <- function(x, by) {
+  if (!inherits(x, "POSIXct")) x <- as_utc(x)
+  x <- sort(x)
+
+  empty <- data.frame(
+    gap_start = as.POSIXct(character(), tz = "UTC"),
+    gap_end   = as.POSIXct(character(), tz = "UTC"),
+    n_missing = integer()
+  )
+
+  if (length(x) < 2L) return(empty)
+
+  ref_seq       <- seq(x[1], x[1] + 2 * 86400, by = by)
+  expected_secs <- as.numeric(difftime(ref_seq[2], ref_seq[1], units = "secs"))
+  actual_secs   <- as.numeric(difftime(x[-1L], x[-length(x)], units = "secs"))
+
+  gap_idx <- which(actual_secs > expected_secs + .Machine$double.eps)
+  if (length(gap_idx) == 0L) return(empty)
+
+  data.frame(
+    gap_start = x[gap_idx],
+    gap_end   = x[gap_idx + 1L],
+    n_missing = as.integer(round(actual_secs[gap_idx] / expected_secs)) - 1L
+  )
+}
+
+#' Format a duration as a human-readable string
+#'
+#' Converts a numeric duration in seconds to a concise string such as
+#' `"2h 14m 30s"`. Sub-second durations are shown with two decimal places.
+#' Primarily useful for logging pipeline runtimes via [log_timed()].
+#'
+#' @param seconds A non-negative numeric value representing a duration in
+#'   seconds.
+#'
+#' @return A character string.
+#' @export
+#'
+#' @examples
+#' format_duration(8070)   # "2h 14m 30s"
+#' format_duration(90)     # "1m 30s"
+#' format_duration(0.4)    # "0.40s"
+format_duration <- function(seconds) {
+  if (seconds < 1) return(sprintf("%.2fs", seconds))
+  s_int <- as.integer(round(seconds))
+  h <- s_int %/% 3600L
+  m <- (s_int %% 3600L) %/% 60L
+  s <- s_int %% 60L
+  if (h > 0L) {
+    sprintf("%dh %dm %ds", h, m, s)
+  } else if (m > 0L) {
+    sprintf("%dm %ds", m, s)
+  } else {
+    sprintf("%ds", s)
+  }
+}

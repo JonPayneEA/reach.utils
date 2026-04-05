@@ -76,3 +76,51 @@ log_to_file <- function(path, msg) {
   cat(paste0("[", ts, "] ", msg, "\n"), file = path, append = TRUE)
   invisible(NULL)
 }
+
+#' Log a debug message
+#'
+#' Emits a timestamped debug message via [cli::cli_inform()], but only when
+#' the option `reach.utils.log_level` is set to `"debug"`. Use this for
+#' verbose diagnostic output that should be suppressed in production.
+#'
+#' @param msg A cli-formatted message string.
+#' @param ... Additional arguments passed to [cli::cli_inform()].
+#'
+#' @return Invisibly `NULL`.
+#' @export
+#'
+#' @examples
+#' options(reach.utils.log_level = "debug")
+#' log_debug("Processing {.val 42} rows")
+#' options(reach.utils.log_level = NULL)
+log_debug <- function(msg, ...) {
+  if (!identical(getOption("reach.utils.log_level"), "debug")) {
+    return(invisible(NULL))
+  }
+  ts <- format(Sys.time(), "[%Y-%m-%d %H:%M:%S]")
+  cli::cli_inform(paste(ts, "[DEBUG]", msg), ...)
+  invisible(NULL)
+}
+
+#' Log the execution time of an expression
+#'
+#' Evaluates `expr`, logs the elapsed wall-clock time with a label via
+#' [log_info()], and returns the result of `expr` invisibly. Useful for
+#' timing slow pipeline steps without cluttering call sites with boilerplate.
+#'
+#' @param expr An R expression to evaluate and time.
+#' @param label A character string identifying the timed block in the log.
+#'   Defaults to `"operation"`.
+#'
+#' @return The result of `expr`, invisibly.
+#' @export
+#'
+#' @examples
+#' log_timed(Sys.sleep(0.05), "short pause")
+log_timed <- function(expr, label = "operation") {
+  start   <- proc.time()[["elapsed"]]
+  result  <- expr
+  elapsed <- proc.time()[["elapsed"]] - start
+  log_info("{label} completed in {format_duration(elapsed)}")
+  invisible(result)
+}
