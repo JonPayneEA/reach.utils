@@ -21,7 +21,9 @@ remotes::install_github("JonPayneEA/reach.utils")
 | `logging` | `log_info`, `log_warn`, `log_error`, `log_debug`, `log_section`, `log_timed`, `log_progress`, `log_to_file` | Timestamped structured console and file logging |
 | `path` | `ensure_dir`, `check_file_exists`, `resolve_path`, `find_latest_file`, `swap_ext` | File path utilities |
 | `qc` | `check_bounds`, `check_duplicates`, `check_flatline`, `check_monotonic`, `check_na_runs`, `check_rate_of_change`, `qc_series` | Quality control checks for numeric time series |
-| `templates` | `create_script_template`, `create_script`, `create_readme` | Project scaffolding and script templates |
+| `templates` | `create_project`, `create_config`, `create_script`, `create_script_template`, `create_readme`, `create_report`, `create_function` | Project scaffolding and file templates |
+| `assert` | `assert_posixct`, `assert_numeric`, `assert_scalar`, `assert_length`, `assert_same_length`, `assert_choice` | Pipeline argument guards with informative errors |
+| `epoch` | `water_year_bounds`, `water_year_seq`, `split_water_years`, `complete_water_years`, `label_season` | Water-year calendars, splitting, and season labelling |
 
 ## Usage
 
@@ -122,10 +124,15 @@ flags <- qc_series(
 ### Templates
 
 ```r
-# Set the RStudio new-script template to the reach.io standard header
-create_script_template()
+# Scaffold a full project directory in one call
+create_project(author = "Forecasting and Warning Team")
+# Creates: R/, data/raw/, data/processed/, config/, outputs/, logs/,
+#          tests/testthat/, .gitignore, config/pipeline.yml
 
-# Create a new R script pre-filled with the header
+# Create a starter YAML config (also called automatically by create_project)
+create_config(site_id = "42001")
+
+# Create a new R script pre-filled with the reach.io header
 create_script(
   file_name = "data_import",
   file_path = "R",
@@ -133,12 +140,65 @@ create_script(
   email     = "forecasting@environment-agency.gov.uk"
 )
 
-# Create a README.qmd skeleton (renders automatically if quarto is installed)
+# Create a new function stub with a Roxygen2 skeleton
+create_function(
+  "aggregate_flow",
+  parameters = c("x", "values", "by")
+)
+
+# Set the RStudio new-script template to the reach.io standard header
+create_script_template()
+
+# Create a README.qmd skeleton
 create_readme(
   format       = "github",
   author       = "Forecasting and Warning Team",
   readme_title = "My Reach Project"
 )
+
+# Create a formal analytical report template
+create_report(
+  format       = "html",
+  file_name    = "flood_analysis_2024",
+  report_title = "Flood Frequency Analysis — River Avon at Evesham",
+  author       = "Forecasting and Warning Team"
+)
+```
+
+### Assertions
+
+```r
+# Guard a function entry point
+assert_posixct(timestamps)
+assert_numeric(values, allow_na = FALSE)
+assert_scalar(threshold)
+assert_same_length(timestamps, values, args = c("timestamps", "values"))
+assert_choice(method, c("linear", "locf", "constant"))
+```
+
+### Epoch (water-year calendar)
+
+```r
+# Get the start/end instants of a water year
+water_year_bounds(2023)
+# $start  2023-10-01 00:00:00 UTC
+# $end    2024-09-30 23:59:59 UTC
+
+# Start datetimes for a range of water years
+water_year_seq(2020, 2024)
+
+# Split a series into per-water-year subsets
+chunks <- split_water_years(timestamps, values)
+
+# Which water years have complete 15-min coverage?
+complete_water_years(timestamps, by = "15 mins")
+
+# Assign EA quarter labels (Q1 Oct-Dec, Q2 Jan-Mar, Q3 Apr-Jun, Q4 Jul-Sep)
+label_season(timestamps, scheme = "ea_quarter")
+
+# Or meteorological / hydrological (wet/dry) seasons
+label_season(timestamps, scheme = "meteorological")
+label_season(timestamps, scheme = "hydrological")
 ```
 
 ## Dependencies
