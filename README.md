@@ -22,6 +22,8 @@ remotes::install_github("JonPayneEA/reach.utils")
 | `path` | `ensure_dir`, `check_file_exists`, `resolve_path`, `find_latest_file`, `swap_ext` | File path utilities |
 | `qc` | `check_bounds`, `check_duplicates`, `check_flatline`, `check_monotonic`, `check_na_runs`, `check_rate_of_change`, `qc_series` | Quality control checks for numeric time series |
 | `templates` | `create_script_template`, `create_script`, `create_readme` | Project scaffolding and script templates |
+| `assert` | `assert_posixct`, `assert_numeric`, `assert_scalar`, `assert_length`, `assert_same_length`, `assert_choice` | Pipeline argument guards with informative errors |
+| `epoch` | `water_year_bounds`, `water_year_seq`, `split_water_years`, `complete_water_years`, `label_season` | Water-year calendars, splitting, and season labelling |
 
 ## Usage
 
@@ -139,6 +141,42 @@ create_readme(
   author       = "Forecasting and Warning Team",
   readme_title = "My Reach Project"
 )
+```
+
+### Assertions
+
+```r
+# Guard a function entry point
+assert_posixct(timestamps)
+assert_numeric(values, allow_na = FALSE)
+assert_scalar(threshold)
+assert_same_length(timestamps, values, args = c("timestamps", "values"))
+assert_choice(method, c("linear", "locf", "constant"))
+```
+
+### Epoch (water-year calendar)
+
+```r
+# Get the start/end instants of a water year
+water_year_bounds(2023)
+# $start  2023-10-01 00:00:00 UTC
+# $end    2024-09-30 23:59:59 UTC
+
+# Start datetimes for a range of water years
+water_year_seq(2020, 2024)
+
+# Split a series into per-water-year subsets
+chunks <- split_water_years(timestamps, values)
+
+# Which water years have complete 15-min coverage?
+complete_water_years(timestamps, by = "15 mins")
+
+# Assign EA quarter labels (Q1 Oct-Dec, Q2 Jan-Mar, Q3 Apr-Jun, Q4 Jul-Sep)
+label_season(timestamps, scheme = "ea_quarter")
+
+# Or meteorological / hydrological (wet/dry) seasons
+label_season(timestamps, scheme = "meteorological")
+label_season(timestamps, scheme = "hydrological")
 ```
 
 ## Dependencies
