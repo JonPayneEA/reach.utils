@@ -18,6 +18,7 @@ remotes::install_github("JonPayneEA/reach.utils")
 |---|---|---|
 | `datetime` | `as_utc`, `parse_datetime`, `floor_to`, `snap_to_datetime`, `seq_datetime`, `water_year`, `detect_gaps`, `is_complete_series`, `format_duration` | Parse, coerce, round, and validate datetime series |
 | `config` | `load_config`, `merge_configs`, `get_config_val`, `config_val_as`, `expand_config_paths`, `validate_config`, `config_from_env` | Load and query YAML/JSON configuration files |
+| `activities` | `register_activity`, `list_activities`, `run_pipeline` | Register package functions as named activities and run them from a pipeline YAML |
 | `logging` | `log_info`, `log_warn`, `log_error`, `log_debug`, `log_section`, `log_timed`, `log_progress`, `log_to_file` | Timestamped structured console and file logging |
 | `path` | `ensure_dir`, `check_file_exists`, `resolve_path`, `find_latest_file`, `swap_ext` | File path utilities |
 | `qc` | `check_bounds`, `check_duplicates`, `check_flatline`, `check_monotonic`, `check_na_runs`, `check_rate_of_change`, `qc_series` | Quality control checks for numeric time series |
@@ -64,6 +65,45 @@ cfg <- merge_configs("config/base.yml", "config/prod.yml")
 # e.g. REACH__QC__THRESHOLD=5.0 maps to cfg$qc$threshold
 cfg <- config_from_env(cfg)
 ```
+
+### Pipeline activities
+
+Any reach package can register its functions as named activities in its own
+`.onLoad()`, so a single YAML config can chain steps across packages:
+
+```r
+# Inside reach.io's .onLoad(libname, pkgname):
+reach.utils::register_activity("backfill",    run_backfill,    package = pkgname)
+reach.utils::register_activity("incremental", run_incremental, package = pkgname)
+```
+
+```yaml
+# pipeline.yml
+global:
+  registry_path: data/fw_bronze/gauge_registry/gauge_registry.parquet
+  output_dir: data/fw_bronze/flow
+
+activities:
+  - name: backfill
+    package: reach.io
+    args:
+      start_date: "2000-01-01"
+      end_date: "2024-12-31"
+  - name: incremental
+    package: reach.io
+```
+
+```r
+# Run it — any activity argument left unset above is filled in from `global`
+# when the target function has a matching parameter name
+reach.utils::run_pipeline("pipeline.yml")
+
+# Or from a shell/cron entry:
+# Rscript -e 'reach.utils::run_pipeline("pipeline.yml")'
+```
+
+The run stops immediately if an activity is unregistered, its package isn't
+installed, or the activity itself errors.
 
 ### Logging
 
