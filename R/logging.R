@@ -4,15 +4,17 @@
 #'
 #' @param msg A cli-formatted message string.
 #' @param ... Additional arguments passed to [cli::cli_inform()].
+#' @param .envir Environment in which to evaluate `{}` expressions in `msg`.
+#'   Defaults to the caller's, so its local variables interpolate.
 #'
 #' @return Invisibly `NULL`.
 #' @export
 #'
 #' @examples
 #' log_info("Pipeline started for site {.val ABCD}")
-log_info <- function(msg, ...) {
+log_info <- function(msg, ..., .envir = parent.frame()) {
   ts <- format(Sys.time(), "[%Y-%m-%d %H:%M:%S]")
-  cli::cli_inform(paste(ts, msg), ...)
+  cli::cli_inform(paste(ts, msg), ..., .envir = .envir)
   invisible(NULL)
 }
 
@@ -22,15 +24,17 @@ log_info <- function(msg, ...) {
 #'
 #' @param msg A cli-formatted message string.
 #' @param ... Additional arguments passed to [cli::cli_warn()].
+#' @param .envir Environment in which to evaluate `{}` expressions in `msg`.
+#'   Defaults to the caller's, so its local variables interpolate.
 #'
 #' @return Invisibly `NULL`.
 #' @export
 #'
 #' @examples
 #' log_warn("Missing values detected in site {.val ABCD}")
-log_warn <- function(msg, ...) {
+log_warn <- function(msg, ..., .envir = parent.frame()) {
   ts <- format(Sys.time(), "[%Y-%m-%d %H:%M:%S]")
-  cli::cli_warn(paste(ts, msg), ...)
+  cli::cli_warn(paste(ts, msg), ..., .envir = .envir)
   invisible(NULL)
 }
 
@@ -40,6 +44,8 @@ log_warn <- function(msg, ...) {
 #'
 #' @param msg A cli-formatted message string.
 #' @param ... Additional arguments passed to [cli::cli_abort()].
+#' @param .envir Environment in which to evaluate `{}` expressions in `msg`.
+#'   Defaults to the caller's, so its local variables interpolate.
 #'
 #' @return Does not return; always throws an error.
 #' @export
@@ -48,9 +54,9 @@ log_warn <- function(msg, ...) {
 #' \dontrun{
 #' log_error("Could not connect to API for site {.val ABCD}")
 #' }
-log_error <- function(msg, ...) {
+log_error <- function(msg, ..., .envir = parent.frame()) {
   ts <- format(Sys.time(), "[%Y-%m-%d %H:%M:%S]")
-  cli::cli_abort(paste(ts, msg), ...)
+  cli::cli_abort(paste(ts, msg), ..., .envir = .envir)
 }
 
 #' Append a log message to a file
@@ -85,6 +91,8 @@ log_to_file <- function(path, msg) {
 #'
 #' @param msg A cli-formatted message string.
 #' @param ... Additional arguments passed to [cli::cli_inform()].
+#' @param .envir Environment in which to evaluate `{}` expressions in `msg`.
+#'   Defaults to the caller's, so its local variables interpolate.
 #'
 #' @return Invisibly `NULL`.
 #' @export
@@ -93,12 +101,12 @@ log_to_file <- function(path, msg) {
 #' options(reach.utils.log_level = "debug")
 #' log_debug("Processing {.val 42} rows")
 #' options(reach.utils.log_level = NULL)
-log_debug <- function(msg, ...) {
+log_debug <- function(msg, ..., .envir = parent.frame()) {
   if (!identical(getOption("reach.utils.log_level"), "debug")) {
     return(invisible(NULL))
   }
   ts <- format(Sys.time(), "[%Y-%m-%d %H:%M:%S]")
-  cli::cli_inform(paste(ts, "[DEBUG]", msg), ...)
+  cli::cli_inform(paste(ts, "[DEBUG]", msg), ..., .envir = .envir)
   invisible(NULL)
 }
 

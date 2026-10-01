@@ -58,3 +58,18 @@ test_that("log_progress message contains i, n, and label", {
 test_that("log_section returns invisibly NULL", {
   expect_invisible(log_section("Test section"))
 })
+
+test_that("log helpers interpolate local variables of the calling function", {
+  caller_info  <- function() { site <- "ABCD"; log_info("site {site}") }
+  caller_warn  <- function() { site <- "ABCD"; log_warn("site {site}") }
+  caller_error <- function() { site <- "ABCD"; log_error("site {site}") }
+  caller_debug <- function() { site <- "ABCD"; log_debug("site {site}") }
+
+  expect_message(caller_info(), regexp = "site ABCD")
+  expect_warning(caller_warn(), regexp = "site ABCD")
+  expect_error(caller_error(), regexp = "site ABCD")
+
+  options(reach.utils.log_level = "debug")
+  on.exit(options(reach.utils.log_level = NULL))
+  expect_message(caller_debug(), regexp = "site ABCD")
+})
