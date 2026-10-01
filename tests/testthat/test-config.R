@@ -24,7 +24,7 @@ test_that("validate_config errors on missing keys", {
 })
 
 test_that("validate_config reports a single missing key correctly", {
-  cfg <- list(api_url = "x")
+  cfg <- list()
   expect_error(
     validate_config(cfg, "api_url"),
     regexp = "missing required key:"
@@ -94,6 +94,12 @@ test_that("config_val_as returns NULL for absent key with no default", {
 test_that("config_val_as errors on uncoercible value", {
   cfg <- list(timeout = "not-a-number")
   expect_error(config_val_as(cfg, "timeout", "integer"))
+})
+
+test_that("config_val_as passes a genuinely missing numeric value through as NA", {
+  cfg <- list(timeout = NA_character_)
+  expect_true(is.na(config_val_as(cfg, "timeout", "integer")))
+  expect_true(is.na(config_val_as(cfg, "timeout", "numeric")))
 })
 
 test_that("config_from_env builds a flat config list from env vars", {

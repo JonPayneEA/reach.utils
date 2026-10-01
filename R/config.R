@@ -145,8 +145,20 @@ config_val_as <- function(cfg, key, type, default = NULL) {
   result <- tryCatch(
     switch(type,
       character = as.character(val),
-      integer   = as.integer(val),
-      numeric   = as.numeric(val),
+      integer   = {
+        out <- suppressWarnings(as.integer(val))
+        if (is.na(out) && !is.na(val) && !identical(trimws(as.character(val)), "NA")) {
+          stop("cannot coerce")
+        }
+        out
+      },
+      numeric   = {
+        out <- suppressWarnings(as.numeric(val))
+        if (is.na(out) && !is.na(val) && !identical(trimws(as.character(val)), "NA")) {
+          stop("cannot coerce")
+        }
+        out
+      },
       logical   = {
         if (is.character(val)) {
           lv <- tolower(trimws(val))
@@ -250,7 +262,11 @@ expand_config_paths <- function(cfg, base_dir = getwd()) {
   if (is.list(x)) {
     lapply(x, .expand_paths_recursive, base_dir = base_dir)
   } else if (is.character(x) && length(x) == 1L && .is_relative_path(x)) {
-    normalizePath(file.path(base_dir, x), mustWork = FALSE)
+    # normalizePath(mustWork = FALSE) does not reliably collapse a leading
+    # "./" when the target does not exist on disk, so strip it ourselves
+    # before joining rather than relying on normalizePath to clean it up.
+    x_clean <- sub("^\\./", "", x)
+    normalizePath(file.path(base_dir, x_clean), mustWork = FALSE)
   } else {
     x
   }

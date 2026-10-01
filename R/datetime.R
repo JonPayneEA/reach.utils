@@ -255,7 +255,7 @@ is_complete_series <- function(x, from, to, by) {
 #'
 #' @examples
 #' x <- as_utc("2024-01-15 06:37:22")
-#' snap_to_datetime(x, "15 minutes")  # rounds to 06:45
+#' snap_to_datetime(x, "15 minutes")  # rounds to 06:30
 #' snap_to_datetime(x, "1 hour")      # rounds to 07:00
 snap_to_datetime <- function(x, unit) {
   lubridate::round_date(x, unit = unit)

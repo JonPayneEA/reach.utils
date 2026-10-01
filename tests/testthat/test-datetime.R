@@ -95,7 +95,8 @@ test_that("is_complete_series returns FALSE when a timestamp is missing", {
 test_that("snap_to_datetime rounds to the nearest interval", {
   x   <- as_utc("2024-01-15 06:37:22")
   out <- snap_to_datetime(x, "15 minutes")
-  expect_equal(format(out, "%H:%M", tz = "UTC"), "06:45")
+  # 06:37:22 is 7m22s from 06:30 and 7m38s from 06:45, so 06:30 is nearest.
+  expect_equal(format(out, "%H:%M", tz = "UTC"), "06:30")
 })
 
 test_that("snap_to_datetime returns a POSIXct vector", {
