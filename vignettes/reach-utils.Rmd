@@ -68,15 +68,18 @@ checks before anything downstream trusts a series to be regular.
 
 ```{r datetime-gaps}
 # A 15-minute series missing two steps around 01:00
+# (always include seconds in a timestamp string: as_utc()'s auto-parser can
+# misread a bare "HH:MM" scalar, even though it reads the same string fine
+# as part of a longer vector)
 gappy <- as_utc(c(
-  "2024-01-01 00:00", "2024-01-01 00:15",
-  "2024-01-01 01:00", "2024-01-01 01:15"
+  "2024-01-01 00:00:00", "2024-01-01 00:15:00",
+  "2024-01-01 01:00:00", "2024-01-01 01:15:00"
 ))
 detect_gaps(gappy, by = "15 mins")
 
 is_complete_series(
-  as_utc(c("2024-01-01 00:00", "2024-01-01 00:15", "2024-01-01 00:30")),
-  from = "2024-01-01 00:00", to = "2024-01-01 00:30", by = "15 mins"
+  as_utc(c("2024-01-01 00:00:00", "2024-01-01 00:15:00", "2024-01-01 00:30:00")),
+  from = "2024-01-01 00:00:00", to = "2024-01-01 00:30:00", by = "15 mins"
 )
 ```
 
@@ -129,7 +132,7 @@ Six `check_*()` functions each flag one failure mode in a time series;
 named list of results.
 
 ```{r qc-individual}
-qc_times  <- seq_datetime("2024-01-01", "2024-01-01 01:00", "15 mins")
+qc_times  <- seq_datetime("2024-01-01", "2024-01-01 01:00:00", "15 mins")
 qc_values <- c(1.0, 1.1, 1.1, 1.1, NA, 99.9)
 
 check_duplicates(qc_times)
@@ -227,7 +230,7 @@ ingest_demo <- function(n_readings = 96L, site_id) {
 }
 
 qc_demo <- function(max_val) {
-  x <- seq_datetime("2024-01-01", "2024-01-01 01:00", "15 mins")
+  x <- seq_datetime("2024-01-01", "2024-01-01 01:00:00", "15 mins")
   v <- c(1.0, 1.1, 1.1, 1.1, NA, 99.9)
   qc_series(x, v, bounds = c(0, max_val), max_change = 5)
 }
