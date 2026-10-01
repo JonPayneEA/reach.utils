@@ -1,29 +1,41 @@
 # create_script_template -----------------------------------------------------
 #
-# These tests redirect HOME/R_USER/USERPROFILE to a disposable temp directory
-# so the function's hard-coded template paths never touch the real home
-# directory. R_USER must be overridden alongside HOME: on Windows,
-# path.expand("~") consults R_USER first, and CI runners already set it, so
-# overriding HOME alone silently does nothing there.
+# create_script_template()'s template paths are hard-coded under "~", and
+# path.expand("~") turned out not to be redirectable from within a running
+# test: R resolves the Windows home directory once via the OS "Documents"
+# special folder, ignoring HOME/R_USER/USERPROFILE set with Sys.setenv()
+# after the process has started (confirmed by the CI log: every test wrote
+# to the real "C:/Users/runneradmin/Documents/..." path regardless of the
+# override). So instead of trying to redirect the path, these tests operate
+# on the function's real resolved path directly, backing up and restoring
+# any file that already exists there so a developer's own RStudio template
+# is never lost by running the test suite locally.
 
-.with_temp_home <- function(code) {
-  old_home   <- Sys.getenv("HOME", unset = NA)
-  old_r_user <- Sys.getenv("R_USER", unset = NA)
-  old_up     <- Sys.getenv("USERPROFILE", unset = NA)
-  tmp_home   <- tempfile("home")
-  dir.create(tmp_home)
-  Sys.setenv(HOME = tmp_home, R_USER = tmp_home, USERPROFILE = tmp_home)
+.default_template_path <- function() {
+  path.expand("~/AppData/Roaming/RStudio/templates/default.R")
+}
+
+.with_clean_template_file <- function(code) {
+  path   <- .default_template_path()
+  backup <- NULL
+  if (file.exists(path)) {
+    backup <- tempfile()
+    file.copy(path, backup)
+    file.remove(path)
+  }
   on.exit({
-    if (is.na(old_home))   Sys.unsetenv("HOME") else Sys.setenv(HOME = old_home)
-    if (is.na(old_r_user)) Sys.unsetenv("R_USER") else Sys.setenv(R_USER = old_r_user)
-    if (is.na(old_up))     Sys.unsetenv("USERPROFILE") else Sys.setenv(USERPROFILE = old_up)
-    unlink(tmp_home, recursive = TRUE)
+    if (file.exists(path)) file.remove(path)
+    if (!is.null(backup)) {
+      if (!dir.exists(dirname(path))) dir.create(dirname(path), recursive = TRUE)
+      file.copy(backup, path, overwrite = TRUE)
+      file.remove(backup)
+    }
   }, add = TRUE)
   force(code)
 }
 
 test_that("create_script_template writes the default template", {
-  .with_temp_home({
+  .with_clean_template_file({
     out <- create_script_template()
     expect_true(file.exists(out))
     lines <- readLines(out)
@@ -33,7 +45,7 @@ test_that("create_script_template writes the default template", {
 })
 
 test_that("create_script_template writes a custom template", {
-  .with_temp_home({
+  .with_clean_template_file({
     out <- create_script_template(
       format   = "custom",
       template = c("## Script: ", "## Author: ")
@@ -44,19 +56,19 @@ test_that("create_script_template writes a custom template", {
 })
 
 test_that("create_script_template errors when custom has no template supplied", {
-  .with_temp_home({
+  .with_clean_template_file({
     expect_error(create_script_template(format = "custom"), regexp = "template")
   })
 })
 
 test_that("create_script_template warns when removing a template that does not exist", {
-  .with_temp_home({
+  .with_clean_template_file({
     expect_warning(create_script_template(format = "blank"), regexp = "No template file found")
   })
 })
 
 test_that("create_script_template removes an existing template", {
-  .with_temp_home({
+  .with_clean_template_file({
     out <- create_script_template()
     expect_true(file.exists(out))
     create_script_template(format = "blank")
