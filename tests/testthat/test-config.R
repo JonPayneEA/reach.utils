@@ -126,10 +126,10 @@ test_that("config_from_env returns empty list and warns when no vars match", {
 })
 
 test_that("expand_config_paths expands relative slash paths", {
-  cfg    <- list(input = "data/flow.csv", host = "localhost")
-  result <- expand_config_paths(cfg, "/srv/pipeline")
-  expect_true(startsWith(result$input, "/"))
-  expect_true(grepl("data/flow.csv", result$input))
+  cfg      <- list(input = "data/flow.csv", host = "localhost")
+  result   <- expand_config_paths(cfg, "/srv/pipeline")
+  expected <- normalizePath(file.path("/srv/pipeline", "data/flow.csv"), mustWork = FALSE)
+  expect_equal(result$input, expected)
 })
 
 test_that("expand_config_paths leaves non-path values unchanged", {
@@ -140,9 +140,10 @@ test_that("expand_config_paths leaves non-path values unchanged", {
 })
 
 test_that("expand_config_paths expands dot-relative paths", {
-  cfg    <- list(out = "./outputs/results.csv")
-  result <- expand_config_paths(cfg, "/srv/pipeline")
-  expect_equal(result$out, "/srv/pipeline/outputs/results.csv")
+  cfg      <- list(out = "./outputs/results.csv")
+  result   <- expand_config_paths(cfg, "/srv/pipeline")
+  expected <- normalizePath(file.path("/srv/pipeline", "outputs/results.csv"), mustWork = FALSE)
+  expect_equal(result$out, expected)
 })
 
 test_that("expand_config_paths leaves URLs unchanged", {

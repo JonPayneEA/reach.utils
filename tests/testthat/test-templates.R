@@ -1,17 +1,22 @@
 # create_script_template -----------------------------------------------------
 #
-# These tests redirect HOME/USERPROFILE to a disposable temp directory so the
-# function's hard-coded template paths never touch the real home directory.
+# These tests redirect HOME/R_USER/USERPROFILE to a disposable temp directory
+# so the function's hard-coded template paths never touch the real home
+# directory. R_USER must be overridden alongside HOME: on Windows,
+# path.expand("~") consults R_USER first, and CI runners already set it, so
+# overriding HOME alone silently does nothing there.
 
 .with_temp_home <- function(code) {
-  old_home <- Sys.getenv("HOME", unset = NA)
-  old_up   <- Sys.getenv("USERPROFILE", unset = NA)
-  tmp_home <- tempfile("home")
+  old_home   <- Sys.getenv("HOME", unset = NA)
+  old_r_user <- Sys.getenv("R_USER", unset = NA)
+  old_up     <- Sys.getenv("USERPROFILE", unset = NA)
+  tmp_home   <- tempfile("home")
   dir.create(tmp_home)
-  Sys.setenv(HOME = tmp_home, USERPROFILE = tmp_home)
+  Sys.setenv(HOME = tmp_home, R_USER = tmp_home, USERPROFILE = tmp_home)
   on.exit({
-    if (is.na(old_home)) Sys.unsetenv("HOME") else Sys.setenv(HOME = old_home)
-    if (is.na(old_up))   Sys.unsetenv("USERPROFILE") else Sys.setenv(USERPROFILE = old_up)
+    if (is.na(old_home))   Sys.unsetenv("HOME") else Sys.setenv(HOME = old_home)
+    if (is.na(old_r_user)) Sys.unsetenv("R_USER") else Sys.setenv(R_USER = old_r_user)
+    if (is.na(old_up))     Sys.unsetenv("USERPROFILE") else Sys.setenv(USERPROFILE = old_up)
     unlink(tmp_home, recursive = TRUE)
   }, add = TRUE)
   force(code)
@@ -170,7 +175,7 @@ test_that("create_config overwrites when overwrite = TRUE", {
 # regardless of whether the quarto package happens to be installed in CI.
 
 test_that("create_readme writes a qmd file and warns when quarto is unavailable", {
-  local_mocked_bindings(requireNamespace = function(...) FALSE)
+  local_mocked_bindings(.quarto_available = function() FALSE)
   dest <- tempfile("readme")
 
   expect_warning(
@@ -195,7 +200,7 @@ test_that("create_readme errors on an invalid format", {
 # create_report -------------------------------------------------------------
 
 test_that("create_report writes a qmd report and warns when quarto is unavailable", {
-  local_mocked_bindings(requireNamespace = function(...) FALSE)
+  local_mocked_bindings(.quarto_available = function() FALSE)
   dest <- tempfile("report")
 
   expect_warning(

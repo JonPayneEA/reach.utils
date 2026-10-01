@@ -1,3 +1,7 @@
+.quarto_available <- function() {
+  requireNamespace("quarto", quietly = TRUE)
+}
+
 #' Set the default RStudio new-script template
 #'
 #' Creates or modifies the RStudio default R script template so that every new
@@ -311,7 +315,7 @@ create_readme <- function(
   writeLines(readme_txt, qmd_path)
   cli::cli_inform("README template written: {.path {qmd_path}}")
 
-  if (requireNamespace("quarto", quietly = TRUE)) {
+  if (.quarto_available()) {
     quarto::quarto_render(qmd_path, quiet = TRUE)
     cli::cli_inform("README rendered ({.val {format}}).")
   } else {
@@ -611,7 +615,7 @@ create_report <- function(
   writeLines(report_txt, qmd_path)
   cli::cli_inform("Report template written: {.path {qmd_path}}")
 
-  if (requireNamespace("quarto", quietly = TRUE)) {
+  if (.quarto_available()) {
     quarto::quarto_render(qmd_path, quiet = TRUE)
     cli::cli_inform("Report rendered ({.val {format}}).")
   } else {
