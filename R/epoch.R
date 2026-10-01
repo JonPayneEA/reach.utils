@@ -5,7 +5,7 @@
 #' `YYYY-10-01 00:00:00` to `(YYYY+1)-09-30 23:59:59`.
 #'
 #' @param year Integer. The year in which the water year begins (e.g. `2023`
-#'   for the October 2023 – September 2024 water year).
+#'   for the October 2023 - September 2024 water year).
 #' @param tz Time zone string. Default `"UTC"`.
 #'
 #' @return A named list with elements `start` and `end`, both POSIXct.
@@ -110,11 +110,11 @@ complete_water_years <- function(x, by = "15 mins") {
 #'
 #' Assigns each element of `x` to a season according to one of three schemes:
 #'
-#' * `"ea_quarter"` — EA water-year quarters: Q1 (Oct–Dec), Q2 (Jan–Mar),
-#'   Q3 (Apr–Jun), Q4 (Jul–Sep).
-#' * `"meteorological"` — standard UK met seasons: Winter (Dec–Feb),
-#'   Spring (Mar–May), Summer (Jun–Aug), Autumn (Sep–Nov).
-#' * `"hydrological"` — EA wet/dry halves: wet (Oct–Mar), dry (Apr–Sep).
+#' * `"ea_quarter"` - EA water-year quarters: Q1 (Oct-Dec), Q2 (Jan-Mar),
+#'   Q3 (Apr-Jun), Q4 (Jul-Sep).
+#' * `"meteorological"` - standard UK met seasons: Winter (Dec-Feb),
+#'   Spring (Mar-May), Summer (Jun-Aug), Autumn (Sep-Nov).
+#' * `"hydrological"` - EA wet/dry halves: wet (Oct-Mar), dry (Apr-Sep).
 #'
 #' @param x A POSIXct vector.
 #' @param scheme Season labelling scheme. One of `"ea_quarter"`,

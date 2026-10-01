@@ -16,7 +16,11 @@ Depends:
 Imports:
     lubridate,
     yaml,
-    cli (>= 3.6.0)
+    jsonlite,
+    cli (>= 3.6.0),
+    stats,
+    utils,
+    tools
 Suggests:
     quarto,
     testthat (>= 3.0.0),

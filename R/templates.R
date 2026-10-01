@@ -9,11 +9,11 @@
 #'
 #' Four modes are supported:
 #'
-#' * `"default"` — writes the reach.io standard header template.
-#' * `"custom"` — writes a caller-supplied character vector as the template.
-#' * `"manual_edit"` — opens the existing template file for interactive
+#' * `"default"` - writes the reach.io standard header template.
+#' * `"custom"` - writes a caller-supplied character vector as the template.
+#' * `"manual_edit"` - opens the existing template file for interactive
 #'   editing (requires an active RStudio session).
-#' * `"blank"` — deletes the template, reverting new scripts to blank files.
+#' * `"blank"` - deletes the template, reverting new scripts to blank files.
 #'
 #' @param format One of `"default"`, `"custom"`, `"manual_edit"`, or
 #'   `"blank"`.
@@ -214,9 +214,9 @@ create_script <- function(
 #'
 #' Supported output formats:
 #'
-#' * `"markdown"` — plain Markdown (`.md`).
-#' * `"github"` — GitHub Flavoured Markdown (GFM).
-#' * `"html"` — self-contained HTML.
+#' * `"markdown"` - plain Markdown (`.md`).
+#' * `"github"` - GitHub Flavoured Markdown (GFM).
+#' * `"html"` - self-contained HTML.
 #'
 #' @param format Output format. One of `"markdown"` (default), `"github"`, or
 #'   `"html"`.
@@ -489,7 +489,7 @@ create_config <- function(
 
 #' Create an analytical report from a Quarto template
 #'
-#' Writes a `.qmd` file structured as a formal analytical report — distinct
+#' Writes a `.qmd` file structured as a formal analytical report - distinct
 #' from [create_readme()] in that it targets a shareable output document
 #' rather than project documentation. The template includes sections for
 #' executive summary, data and methods, results, discussion, and a code
@@ -497,9 +497,9 @@ create_config <- function(
 #'
 #' Supported output formats:
 #'
-#' * `"html"` (default) — self-contained HTML with left-hand TOC.
-#' * `"pdf"` — PDF via LaTeX.
-#' * `"github"` — GitHub Flavoured Markdown.
+#' * `"html"` (default) - self-contained HTML with left-hand TOC.
+#' * `"pdf"` - PDF via LaTeX.
+#' * `"github"` - GitHub Flavoured Markdown.
 #'
 #' @param format Output format. One of `"html"` (default), `"pdf"`, or
 #'   `"github"`.
@@ -518,7 +518,7 @@ create_config <- function(
 #' create_report(
 #'   format       = "html",
 #'   file_name    = "flood_analysis_2024",
-#'   report_title = "Flood Frequency Analysis — River Avon at Evesham",
+#'   report_title = "Flood Frequency Analysis - River Avon at Evesham",
 #'   author       = "Forecasting and Warning Team"
 #' )
 #' }

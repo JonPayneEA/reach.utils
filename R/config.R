@@ -191,8 +191,8 @@ config_val_as <- function(cfg, key, type, default = NULL) {
 #' name denote nesting levels; all keys are lowercased.
 #'
 #' For example, with `prefix = "REACH"`:
-#' - `REACH__DB__HOST=localhost` → `list(db = list(host = "localhost"))`
-#' - `REACH__TIMEOUT=30`        → `list(timeout = "30")`
+#' - `REACH__DB__HOST=localhost` becomes `list(db = list(host = "localhost"))`
+#' - `REACH__TIMEOUT=30` becomes `list(timeout = "30")`
 #'
 #' Values are always character strings; use [config_val_as()] to coerce types.
 #'

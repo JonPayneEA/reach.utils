@@ -230,7 +230,7 @@ check_na_runs <- function(x, values, max_run = 1L) {
 #' Run a suite of time series quality checks
 #'
 #' Executes a configurable set of QC checks on a datetime vector and its
-#' associated values, returning a named list of results — one element per
+#' associated values, returning a named list of results - one element per
 #' check run. Each element is a data frame in the format returned by the
 #' corresponding `check_*` function. Zero rows means the check passed.
 #'

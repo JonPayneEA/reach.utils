@@ -154,7 +154,7 @@ log_timed <- function(expr, label = "operation") {
 log_progress <- function(i, n, label = "") {
   pct <- round(100 * i / n)
   ts  <- format(Sys.time(), "[%Y-%m-%d %H:%M:%S]")
-  suffix <- if (nzchar(label)) paste0(" — ", label) else ""
+  suffix <- if (nzchar(label)) paste0(" - ", label) else ""
   cli::cli_inform(sprintf("%s %d/%d (%d%%)%s", ts, i, n, pct, suffix))
   invisible(NULL)
 }

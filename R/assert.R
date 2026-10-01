@@ -100,12 +100,12 @@ assert_length <- function(x, n, arg = deparse(substitute(x))) {
 #' Assert that all supplied vectors have the same length
 #'
 #' Aborts if any two of the vectors passed via `...` differ in length. Designed
-#' to guard `(x, values)` pairs that must be parallel — the most common source
+#' to guard `(x, values)` pairs that must be parallel - the most common source
 #' of silent data misalignment in pipeline code.
 #'
 #' @param ... Two or more vectors to compare.
 #' @param args Optional character vector of argument names used in the error
-#'   message. When `NULL`, positional labels (`arg1`, `arg2`, …) are used.
+#'   message. When `NULL`, positional labels (`arg1`, `arg2`, ...) are used.
 #'
 #' @return `NULL` invisibly if the assertion passes.
 #' @export

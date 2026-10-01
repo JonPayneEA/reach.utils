@@ -143,9 +143,9 @@ water_year <- function(x) {
 #'
 #' @return A data frame with columns:
 #'   \describe{
-#'     \item{`gap_start`}{POSIXct — the last timestamp before the gap.}
-#'     \item{`gap_end`}{POSIXct — the first timestamp after the gap.}
-#'     \item{`n_missing`}{integer — number of expected timestamps absent.}
+#'     \item{`gap_start`}{POSIXct - the last timestamp before the gap.}
+#'     \item{`gap_end`}{POSIXct - the first timestamp after the gap.}
+#'     \item{`n_missing`}{integer - number of expected timestamps absent.}
 #'   }
 #'   Returns zero rows if no gaps are detected.
 #' @export
