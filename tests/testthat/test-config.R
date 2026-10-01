@@ -20,7 +20,23 @@ test_that("validate_config passes when all keys present", {
 
 test_that("validate_config errors on missing keys", {
   cfg <- list(api_url = "x")
-  expect_error(validate_config(cfg, c("api_url", "timeout")))
+  expect_error(validate_config(cfg, c("api_url", "timeout")), regexp = "timeout")
+})
+
+test_that("validate_config reports a single missing key correctly", {
+  cfg <- list(api_url = "x")
+  expect_error(
+    validate_config(cfg, "api_url"),
+    regexp = "missing required key:"
+  )
+})
+
+test_that("validate_config reports multiple missing keys correctly", {
+  cfg <- list()
+  expect_error(
+    validate_config(cfg, c("api_url", "timeout")),
+    regexp = "missing required keys:"
+  )
 })
 
 test_that("merge_configs later values take precedence over earlier ones", {

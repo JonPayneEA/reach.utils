@@ -151,8 +151,8 @@ water_year <- function(x) {
 #' @export
 #'
 #' @examples
-#' x <- as_utc(c("2024-01-01 00:00", "2024-01-01 00:15",
-#'               "2024-01-01 01:00", "2024-01-01 01:15"))
+#' x <- as_utc(c("2024-01-01 00:00:00", "2024-01-01 00:15:00",
+#'               "2024-01-01 01:00:00", "2024-01-01 01:15:00"))
 #' detect_gaps(x, "15 mins")
 detect_gaps <- function(x, by) {
   if (!inherits(x, "POSIXct")) x <- as_utc(x)
@@ -226,8 +226,8 @@ format_duration <- function(seconds) {
 #' @export
 #'
 #' @examples
-#' x <- as_utc(c("2024-01-01 00:00", "2024-01-01 00:15", "2024-01-01 00:30"))
-#' is_complete_series(x, "2024-01-01 00:00", "2024-01-01 00:30", "15 mins")
+#' x <- as_utc(c("2024-01-01 00:00:00", "2024-01-01 00:15:00", "2024-01-01 00:30:00"))
+#' is_complete_series(x, "2024-01-01 00:00:00", "2024-01-01 00:30:00", "15 mins")
 #' # [1] TRUE
 is_complete_series <- function(x, from, to, by) {
   if (!inherits(x,    "POSIXct")) x    <- as_utc(x)

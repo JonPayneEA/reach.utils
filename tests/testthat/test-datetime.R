@@ -45,14 +45,14 @@ test_that("water_year labels pre-October as the previous year", {
 })
 
 test_that("detect_gaps returns zero rows when no gaps exist", {
-  x <- as_utc(c("2024-01-01 00:00", "2024-01-01 00:15", "2024-01-01 00:30"))
+  x <- as_utc(c("2024-01-01 00:00:00", "2024-01-01 00:15:00", "2024-01-01 00:30:00"))
   result <- detect_gaps(x, "15 mins")
   expect_equal(nrow(result), 0L)
 })
 
 test_that("detect_gaps identifies a single gap correctly", {
-  x <- as_utc(c("2024-01-01 00:00", "2024-01-01 00:15",
-                "2024-01-01 01:00", "2024-01-01 01:15"))
+  x <- as_utc(c("2024-01-01 00:00:00", "2024-01-01 00:15:00",
+                "2024-01-01 01:00:00", "2024-01-01 01:15:00"))
   result <- detect_gaps(x, "15 mins")
   expect_equal(nrow(result), 1L)
   expect_equal(result$n_missing, 2L)
@@ -81,14 +81,14 @@ test_that("format_duration formats sub-second durations", {
 })
 
 test_that("is_complete_series returns TRUE for a complete series", {
-  x <- as_utc(c("2024-01-01 00:00", "2024-01-01 00:15", "2024-01-01 00:30"))
-  expect_true(is_complete_series(x, "2024-01-01 00:00", "2024-01-01 00:30",
+  x <- as_utc(c("2024-01-01 00:00:00", "2024-01-01 00:15:00", "2024-01-01 00:30:00"))
+  expect_true(is_complete_series(x, "2024-01-01 00:00:00", "2024-01-01 00:30:00",
                                  "15 mins"))
 })
 
 test_that("is_complete_series returns FALSE when a timestamp is missing", {
-  x <- as_utc(c("2024-01-01 00:00", "2024-01-01 00:30"))
-  expect_false(is_complete_series(x, "2024-01-01 00:00", "2024-01-01 00:30",
+  x <- as_utc(c("2024-01-01 00:00:00", "2024-01-01 00:30:00"))
+  expect_false(is_complete_series(x, "2024-01-01 00:00:00", "2024-01-01 00:30:00",
                                   "15 mins"))
 })
 

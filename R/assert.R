@@ -118,7 +118,9 @@ assert_same_length <- function(..., args = NULL) {
   dots <- list(...)
   lens <- lengths(dots)
   if (length(unique(lens)) == 1L) return(invisible(NULL))
-  labels <- if (is.null(args)) paste0("arg", seq_along(dots)) else args
+  # labels is used only inside the cli glue string below, which lintr's
+  # static analysis does not see into.
+  labels <- if (is.null(args)) paste0("arg", seq_along(dots)) else args # nolint
   cli::cli_abort(
     c(
       "All arguments must have the same length.",

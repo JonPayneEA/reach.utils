@@ -134,14 +134,14 @@ label_season <- function(x, scheme = c("ea_quarter", "meteorological", "hydrolog
   m <- as.integer(format(x, "%m", tz = "UTC"))
 
   if (scheme == "ea_quarter") {
-    lookup <- c("Q2","Q2","Q2","Q3","Q3","Q3","Q4","Q4","Q4","Q1","Q1","Q1")
+    lookup <- c("Q2", "Q2", "Q2", "Q3", "Q3", "Q3", "Q4", "Q4", "Q4", "Q1", "Q1", "Q1")
     lvls   <- c("Q1", "Q2", "Q3", "Q4")
   } else if (scheme == "meteorological") {
-    lookup <- c("Winter","Winter","Spring","Spring","Spring",
-                "Summer","Summer","Summer","Autumn","Autumn","Autumn","Winter")
+    lookup <- c("Winter", "Winter", "Spring", "Spring", "Spring",
+                "Summer", "Summer", "Summer", "Autumn", "Autumn", "Autumn", "Winter")
     lvls   <- c("Winter", "Spring", "Summer", "Autumn")
   } else {
-    lookup <- c("wet","wet","wet","dry","dry","dry","dry","dry","dry","wet","wet","wet")
+    lookup <- c("wet", "wet", "wet", "dry", "dry", "dry", "dry", "dry", "dry", "wet", "wet", "wet")
     lvls   <- c("wet", "dry")
   }
 

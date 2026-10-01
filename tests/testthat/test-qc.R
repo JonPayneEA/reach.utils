@@ -1,4 +1,4 @@
-x_reg <- function() seq_datetime("2024-01-01", "2024-01-01 01:00", "15 mins")
+x_reg <- function() seq_datetime("2024-01-01", "2024-01-01 01:00:00", "15 mins")
 
 # check_duplicates --------------------------------------------------------
 
@@ -7,8 +7,8 @@ test_that("check_duplicates returns zero rows for unique timestamps", {
 })
 
 test_that("check_duplicates flags a repeated timestamp", {
-  x <- as_utc(c("2024-01-01 00:00", "2024-01-01 00:15",
-                "2024-01-01 00:15", "2024-01-01 00:30"))
+  x <- as_utc(c("2024-01-01 00:00:00", "2024-01-01 00:15:00",
+                "2024-01-01 00:15:00", "2024-01-01 00:30:00"))
   result <- check_duplicates(x)
   expect_equal(nrow(result), 1L)
   expect_equal(result$n_occurrences, 2L)
@@ -25,8 +25,8 @@ test_that("check_monotonic returns zero rows for ascending timestamps", {
 })
 
 test_that("check_monotonic flags an out-of-order timestamp", {
-  x <- as_utc(c("2024-01-01 00:00", "2024-01-01 00:30",
-                "2024-01-01 00:15", "2024-01-01 00:45"))
+  x <- as_utc(c("2024-01-01 00:00:00", "2024-01-01 00:30:00",
+                "2024-01-01 00:15:00", "2024-01-01 00:45:00"))
   result <- check_monotonic(x)
   expect_equal(nrow(result), 1L)
   expect_equal(format(result$timestamp, "%H:%M", tz = "UTC"), "00:15")
@@ -69,7 +69,7 @@ test_that("check_bounds skips NA values", {
 
 test_that("check_flatline returns zero rows when no flatline exists", {
   x      <- x_reg()
-  values <- seq_len(length(x)) * 0.1
+  values <- seq_along(x) * 0.1
   expect_equal(nrow(check_flatline(x, values, n = 3)), 0L)
 })
 
@@ -91,7 +91,7 @@ test_that("check_flatline skips NA values", {
 test_that("check_flatline returns expected columns when empty", {
   x <- x_reg()
   expect_named(
-    check_flatline(x, rep(1:length(x) * 1.0), n = 99),
+    check_flatline(x, rep(seq_along(x) * 1.0), n = 99),
     c("run_start", "run_end", "value", "run_length")
   )
 })

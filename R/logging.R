@@ -126,9 +126,11 @@ log_debug <- function(msg, ..., .envir = parent.frame()) {
 #' @examples
 #' log_timed(Sys.sleep(0.05), "short pause")
 log_timed <- function(expr, label = "operation") {
-  start   <- proc.time()[["elapsed"]]
-  result  <- expr
-  elapsed <- proc.time()[["elapsed"]] - start
+  start  <- proc.time()[["elapsed"]]
+  result <- expr
+  # elapsed is used only inside the cli glue string below, which lintr's
+  # static analysis does not see into.
+  elapsed <- proc.time()[["elapsed"]] - start # nolint
   log_info("{label} completed in {format_duration(elapsed)}")
   invisible(result)
 }

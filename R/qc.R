@@ -10,8 +10,8 @@
 #' @export
 #'
 #' @examples
-#' x <- as_utc(c("2024-01-01 00:00", "2024-01-01 00:15",
-#'               "2024-01-01 00:15", "2024-01-01 00:30"))
+#' x <- as_utc(c("2024-01-01 00:00:00", "2024-01-01 00:15:00",
+#'               "2024-01-01 00:15:00", "2024-01-01 00:30:00"))
 #' check_duplicates(x)
 check_duplicates <- function(x) {
   if (!inherits(x, "POSIXct")) x <- as_utc(x)
@@ -46,8 +46,8 @@ check_duplicates <- function(x) {
 #' @export
 #'
 #' @examples
-#' x <- as_utc(c("2024-01-01 00:00", "2024-01-01 00:30",
-#'               "2024-01-01 00:15", "2024-01-01 00:45"))
+#' x <- as_utc(c("2024-01-01 00:00:00", "2024-01-01 00:30:00",
+#'               "2024-01-01 00:15:00", "2024-01-01 00:45:00"))
 #' check_monotonic(x)
 check_monotonic <- function(x) {
   if (!inherits(x, "POSIXct")) x <- as_utc(x)
@@ -81,7 +81,7 @@ check_monotonic <- function(x) {
 #' @export
 #'
 #' @examples
-#' x      <- seq_datetime("2024-01-01", "2024-01-01 01:00", "15 mins")
+#' x      <- seq_datetime("2024-01-01", "2024-01-01 01:00:00", "15 mins")
 #' values <- c(0.5, 1.2, -0.1, 0.8, 15.0)
 #' check_bounds(x, values, min = 0, max = 10)
 check_bounds <- function(x, values, min, max) {
@@ -112,7 +112,7 @@ check_bounds <- function(x, values, min, max) {
 #' @export
 #'
 #' @examples
-#' x      <- seq_datetime("2024-01-01", "2024-01-01 01:00", "15 mins")
+#' x      <- seq_datetime("2024-01-01", "2024-01-01 01:00:00", "15 mins")
 #' values <- c(1.0, 2.0, 2.0, 2.0, 2.0, 3.0)
 #' check_flatline(x, values, n = 3)
 check_flatline <- function(x, values, n = 3L) {
@@ -158,7 +158,7 @@ check_flatline <- function(x, values, n = 3L) {
 #' @export
 #'
 #' @examples
-#' x      <- seq_datetime("2024-01-01", "2024-01-01 01:00", "15 mins")
+#' x      <- seq_datetime("2024-01-01", "2024-01-01 01:00:00", "15 mins")
 #' values <- c(1.0, 1.1, 8.5, 1.2, 1.3, 1.1)
 #' check_rate_of_change(x, values, max_change = 1.0)
 check_rate_of_change <- function(x, values, max_change) {
@@ -200,7 +200,7 @@ check_rate_of_change <- function(x, values, max_change) {
 #' @export
 #'
 #' @examples
-#' x      <- seq_datetime("2024-01-01", "2024-01-01 01:00", "15 mins")
+#' x      <- seq_datetime("2024-01-01", "2024-01-01 01:00:00", "15 mins")
 #' values <- c(1.0, NA, NA, NA, 1.5, 1.6)
 #' check_na_runs(x, values, max_run = 1)
 check_na_runs <- function(x, values, max_run = 1L) {
@@ -254,7 +254,7 @@ check_na_runs <- function(x, values, max_run = 1L) {
 #' @export
 #'
 #' @examples
-#' x      <- seq_datetime("2024-01-01", "2024-01-01 01:00", "15 mins")
+#' x      <- seq_datetime("2024-01-01", "2024-01-01 01:00:00", "15 mins")
 #' values <- c(1.0, 1.1, 1.1, 1.1, NA, 9.9)
 #' qc_series(x, values, bounds = c(0, 5), max_change = 2, flatline_n = 3)
 qc_series <- function(x, values,

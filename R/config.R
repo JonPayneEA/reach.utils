@@ -77,7 +77,7 @@ validate_config <- function(cfg, required_keys) {
   missing <- setdiff(required_keys, names(cfg))
   if (length(missing) > 0) {
     cli::cli_abort(c(
-      "Config is missing required key{?s}:",
+      "{cli::qty(length(missing))}Config is missing required key{?s}:",
       setNames(paste0("{.val ", missing, "}"), rep("x", length(missing)))
     ))
   }
