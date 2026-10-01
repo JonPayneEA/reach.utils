@@ -1,0 +1,446 @@
+---
+title: "reach.utils: capabilities tour"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{reach.utils: capabilities tour}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+```{r library}
+library(reach.utils)
+```
+
+## Overview
+
+reach.utils is the shared utility layer for the Flode ecosystem: date and
+time handling, water-year calendars, time series quality checks,
+configuration loading, a pipeline activity runner, structured logging, path
+helpers, argument assertions, and project scaffolding. Every other
+`reach.*` package calls down into this one rather than reimplementing these
+pieces itself.
+
+This vignette walks through each module with runnable examples. The project
+scaffolding functions at the end write files and open editors, so those
+chunks are shown but not evaluated.
+
+## Date and time
+
+Operational systems run in UTC; local time must never enter a pipeline.
+`as_utc()` and `parse_datetime()` get you there from whatever format the
+data arrived in.
+
+```{r datetime-parse}
+as_utc("2024-01-15 06:00:00")
+as_utc("15/01/2024 06:00", fmt = "%d/%m/%Y %H:%M")
+
+# parse_datetime() tries a prioritised list of formats commonly seen in
+# EA hydrometric data, so you don't have to know which one you've got
+parse_datetime(c("2024-01-15T06:00:00Z", "15/01/2024 06:00", "2024-01-15"))
+```
+
+`floor_to()` and `snap_to_datetime()` floor or round a timestamp to a grid
+unit; `seq_datetime()` generates a regular series.
+
+```{r datetime-grid}
+x <- as_utc("2024-01-15 06:37:22")
+floor_to(x, "15 minutes")
+snap_to_datetime(x, "15 minutes")
+snap_to_datetime(x, "1 hour")
+
+readings <- seq_datetime("2024-01-01", "2024-01-02", by = "15 mins")
+length(readings)
+```
+
+`water_year()` labels a timestamp by the EA water year it falls in (starts
+1 October, labelled by the year it begins).
+
+```{r datetime-water-year}
+water_year(as_utc(c("2024-09-30", "2024-10-01")))
+```
+
+`detect_gaps()` and `is_complete_series()` are the standard pre-processing
+checks before anything downstream trusts a series to be regular.
+
+```{r datetime-gaps}
+# A 15-minute series missing two steps around 01:00
+gappy <- as_utc(c(
+  "2024-01-01 00:00", "2024-01-01 00:15",
+  "2024-01-01 01:00", "2024-01-01 01:15"
+))
+detect_gaps(gappy, by = "15 mins")
+
+is_complete_series(
+  as_utc(c("2024-01-01 00:00", "2024-01-01 00:15", "2024-01-01 00:30")),
+  from = "2024-01-01 00:00", to = "2024-01-01 00:30", by = "15 mins"
+)
+```
+
+`format_duration()` turns a number of seconds into a readable string, used
+throughout the logging helpers below.
+
+```{r datetime-duration}
+format_duration(8070)
+format_duration(90)
+format_duration(0.4)
+```
+
+## Water-year calendar
+
+The `epoch` functions build on `water_year()` for calendar-aware iteration
+and reporting.
+
+```{r epoch-bounds}
+water_year_bounds(2023)
+water_year_seq(2020, 2023)
+```
+
+`split_water_years()` partitions a series (and, optionally, parallel
+values) into one element per water year present.
+
+```{r epoch-split}
+dates <- as_utc(c("2023-06-01", "2023-11-01", "2024-03-01", "2024-11-01"))
+split_water_years(dates)
+split_water_years(dates, values = c(1.1, 2.2, 3.3, 4.4))
+```
+
+`complete_water_years()` reports which water years in a series have full
+15-minute (or other interval) coverage, and `label_season()` assigns a
+seasonal label under three different schemes.
+
+```{r epoch-complete-season}
+two_years <- seq_datetime("2022-10-01", "2024-09-30 23:45:00", by = "15 mins")
+complete_water_years(two_years)
+
+sample_dates <- as_utc(c("2024-01-15", "2024-04-15", "2024-07-15", "2024-10-15"))
+label_season(sample_dates)
+label_season(sample_dates, scheme = "meteorological")
+label_season(sample_dates, scheme = "hydrological")
+```
+
+## Quality control
+
+Six `check_*()` functions each flag one failure mode in a time series;
+`qc_series()` runs a configurable subset of them together and returns one
+named list of results.
+
+```{r qc-individual}
+qc_times  <- seq_datetime("2024-01-01", "2024-01-01 01:00", "15 mins")
+qc_values <- c(1.0, 1.1, 1.1, 1.1, NA, 99.9)
+
+check_duplicates(qc_times)
+check_monotonic(qc_times)
+check_bounds(qc_times, qc_values, min = 0, max = 10)
+check_flatline(qc_times, qc_values, n = 3L)
+check_rate_of_change(qc_times, qc_values, max_change = 5)
+check_na_runs(qc_times, qc_values, max_run = 1L)
+```
+
+Each returns zero rows when the check passes, so they compose cleanly into
+a pipeline assertion. `qc_series()` runs several at once:
+
+```{r qc-series}
+qc_series(
+  qc_times, qc_values,
+  bounds = c(0, 10), max_change = 5, flatline_n = 3
+)
+```
+
+## Configuration
+
+`load_config()` reads a YAML or JSON file into a named list; the rest of
+the `config` functions query, validate, merge, and type-coerce it.
+
+```{r config-load}
+cfg_path <- tempfile(fileext = ".yml")
+writeLines(c(
+  "site:",
+  "  id: \"4206TH\"",
+  "database:",
+  "  host: localhost",
+  "  port: 5432",
+  "timeout: \"30\"",
+  "debug: \"true\""
+), cfg_path)
+
+cfg <- load_config(cfg_path)
+get_config_val(cfg, c("database", "host"))
+get_config_val(cfg, "missing_key", default = "fallback")
+
+validate_config(cfg, c("site", "database"))
+```
+
+`config_val_as()` coerces a value pulled from YAML text to the type you
+actually need, including the `"true"`/`"false"` and date quirks YAML
+parsers tend to leave as strings.
+
+```{r config-coerce}
+config_val_as(cfg, "timeout", "integer")
+config_val_as(cfg, "debug", "logical")
+```
+
+`merge_configs()` layers an override config (environment-specific paths,
+say) over a base one, recursing into nested lists so only the differing
+keys need to be specified:
+
+```{r config-merge}
+base    <- list(db = list(host = "localhost", port = 5432L), timeout = 30L)
+overlay <- list(db = list(host = "prod-server"))
+merge_configs(base, overlay)
+```
+
+`config_from_env()` builds a config list from environment variables under
+a prefix, and `expand_config_paths()` resolves any relative-looking path
+values in a config against a base directory:
+
+```{r config-env-paths}
+Sys.setenv(REACH__DB__HOST = "prod-server", REACH__TIMEOUT = "60")
+config_from_env("REACH")
+Sys.unsetenv(c("REACH__DB__HOST", "REACH__TIMEOUT"))
+
+expand_config_paths(
+  list(input = "data/flow.csv", host = "localhost"),
+  base_dir = "/srv/pipeline"
+)
+```
+
+## Pipeline activities
+
+`register_activity()` lets any package expose its functions as named
+activities; `run_pipeline()` then drives a sequence of them from a single
+YAML file. This is how a multi-step, multi-package pipeline becomes a
+config file rather than a bespoke script.
+
+```{r activities-register}
+ingest_demo <- function(n_readings = 96L, site_id) {
+  log_info("Ingesting {n_readings} readings for site {site_id}")
+  start <- as_utc("2024-01-01")
+  end   <- start + (n_readings - 1L) * 900  # 900s = 15 min
+  data.frame(
+    datetime = seq_datetime(start, end, by = "15 mins"),
+    flow_cms = round(pmax(0, 10 + cumsum(rnorm(n_readings, sd = 0.3))), 3)
+  )
+}
+
+qc_demo <- function(max_val) {
+  x <- seq_datetime("2024-01-01", "2024-01-01 01:00", "15 mins")
+  v <- c(1.0, 1.1, 1.1, 1.1, NA, 99.9)
+  qc_series(x, v, bounds = c(0, max_val), max_change = 5)
+}
+
+register_activity("ingest", ingest_demo, package = "reach.utils")
+register_activity("qc_check", qc_demo, package = "reach.utils")
+list_activities()
+```
+
+The config supplies a `global` block shared by every activity (here,
+`site_id` and `max_val`), filled in automatically for any activity
+argument left unset in its own `args`:
+
+```{r activities-config}
+pipeline_path <- tempfile(fileext = ".yml")
+writeLines(c(
+  "global:",
+  "  site_id: \"4206TH\"",
+  "  max_val: 50",
+  "",
+  "activities:",
+  "  - name: ingest",
+  "    package: reach.utils",
+  "    args:",
+  "      n_readings: 8",
+  "  - name: qc_check",
+  "    package: reach.utils"
+), pipeline_path)
+
+cat(readLines(pipeline_path), sep = "\n")
+```
+
+```{r activities-run}
+set.seed(1)
+results <- run_pipeline(pipeline_path)
+names(results)
+results[["reach.utils::ingest"]]
+results[["reach.utils::qc_check"]]
+```
+
+`run_pipeline()` resolves every activity before running any of them, so a
+typo in the config aborts before a partial run:
+
+```{r activities-missing, error = TRUE}
+bad_path <- tempfile(fileext = ".yml")
+writeLines(c("activities:", "  - name: does_not_exist", "    package: reach.utils"), bad_path)
+run_pipeline(bad_path)
+```
+
+## Logging
+
+`run_pipeline()` logs through these helpers; they are equally useful in a
+hand-written script. Messages interpolate `{expressions}` from wherever
+they were called, using [cli](https://cli.r-lib.org/) formatting.
+
+```{r logging-basic}
+site_id <- "4206TH"
+n_rows  <- 96L
+log_info("Processing station {site_id}: {n_rows} records")
+```
+
+```{r logging-warn}
+gap_n <- 3L
+log_warn("Gap detected in station {site_id}: {gap_n} missing steps")
+```
+
+`log_error()` logs and raises an error, so pipeline code can rely on it to
+stop execution:
+
+```{r logging-error, error = TRUE}
+log_error("Failed to load NWP grid: {.path missing_file.nc}")
+```
+
+`log_debug()` only emits when the `reach.utils.log_level` option is set to
+`"debug"`, for diagnostic detail that should stay quiet in normal runs:
+
+```{r logging-debug}
+log_debug("This is suppressed by default")
+
+options(reach.utils.log_level = "debug")
+log_debug("Processing {.val 42} rows")
+options(reach.utils.log_level = NULL)
+```
+
+`log_timed()` wraps an expression, times it, and logs the elapsed duration
+via [format_duration()]; `log_progress()` and `log_section()` round out
+console output for long-running loops:
+
+```{r logging-timed}
+result <- log_timed(Sys.sleep(0.05), label = "short pause")
+
+for (i in seq_len(3)) log_progress(i, 3, label = "site ABCD")
+
+log_section("Backfill")
+```
+
+`log_to_file()` mirrors a plain-text, timestamped line to a file instead of
+(or alongside) the console, for runs where console output isn't captured:
+
+```{r logging-file}
+log_path <- tempfile(fileext = ".log")
+log_to_file(log_path, "Backfill completed for site ABCD")
+cat(readLines(log_path), sep = "\n")
+```
+
+## Paths
+
+A small set of path helpers for the things every pipeline script needs:
+create a directory if absent, fail loudly if an input is missing, resolve
+a path without requiring it to exist yet, find the newest file matching a
+pattern, and swap an extension.
+
+```{r paths}
+out_dir <- ensure_dir(file.path(tempdir(), "reach-utils-demo", "outputs"))
+dir.exists(out_dir)
+
+demo_file <- file.path(out_dir, "results.csv")
+writeLines("a,b\n1,2", demo_file)
+check_file_exists(demo_file)
+
+resolve_path(tempdir(), "reach-utils-demo", "..", "outputs")
+
+swap_ext("data/flow.csv", "parquet")
+swap_ext("outputs/run.tar.gz", "zip")
+```
+
+```{r paths-find}
+Sys.sleep(0.01)  # ensure a distinct mtime from demo_file
+newest_file <- file.path(out_dir, "results_v2.csv")
+writeLines("a,b\n3,4", newest_file)
+find_latest_file(out_dir, "*.csv")
+```
+
+`check_file_exists()` aborts with a clear message when the file is absent,
+rather than letting a cryptic error surface further downstream:
+
+```{r paths-missing, error = TRUE}
+check_file_exists(file.path(out_dir, "does_not_exist.csv"))
+```
+
+## Assertions
+
+Guard a function's entry point rather than letting a type or shape
+mistake propagate into a confusing failure three calls later.
+
+```{r assert-pass}
+ts     <- as_utc(c("2024-01-01", "2024-01-02"))
+values <- c(1.2, 3.4)
+
+assert_posixct(ts)
+assert_numeric(values)
+assert_scalar(42)
+assert_length(c(0, 1), n = 2L)
+assert_same_length(ts, values, args = c("timestamps", "values"))
+assert_choice("linear", c("linear", "locf", "constant"))
+```
+
+Each one aborts with an informative, argument-named message on failure:
+
+```{r assert-fail, error = TRUE}
+assert_numeric("not a number")
+```
+
+```{r assert-fail-choice, error = TRUE}
+assert_choice("cubic", c("linear", "locf", "constant"))
+```
+
+## Project scaffolding
+
+The `templates` functions scaffold a new project, a config file, a script
+or function stub, a Quarto README or report, and an RStudio new-script
+template. These write to disk (and `create_script_template()` and
+`manual_edit` touch the user's RStudio configuration or open an editor),
+so this section is illustrative rather than run.
+
+```{r templates, eval = FALSE}
+# Scaffold a full project: R/, data/raw/, data/processed/, config/,
+# outputs/, logs/, tests/testthat/, .gitignore, and a starter config
+create_project(author = "Forecasting and Warning Team")
+
+# The starter config written above, or standalone:
+create_config(site_id = "42001")
+
+# A new script pre-filled with the standard header
+create_script(
+  file_name = "data_import",
+  file_path = "R",
+  author    = "Forecasting and Warning Team",
+  email     = "forecasting@environment-agency.gov.uk"
+)
+
+# A function stub with a roxygen2 skeleton
+create_function("aggregate_flow", parameters = c("x", "values", "by"))
+
+# Set the RStudio new-script template to the reach.utils standard header
+create_script_template()
+
+# Quarto README and analytical report skeletons
+create_readme(format = "github", author = "Forecasting and Warning Team",
+             readme_title = "My Reach Project")
+create_report(
+  format       = "html",
+  file_name    = "flood_analysis_2024",
+  report_title = "Flood Frequency Analysis",
+  author       = "Forecasting and Warning Team"
+)
+```
+
+## Where this fits
+
+reach.utils has no dependency on any other `reach.*` package; everything
+above runs standalone. Packages that do depend on it, such as reach.io,
+call these same functions rather than reimplementing date handling,
+config loading, or logging. See that package's vignettes for activities
+registered against real pipeline functions (`run_backfill()`,
+`run_incremental()`) rather than the toy ones used here.

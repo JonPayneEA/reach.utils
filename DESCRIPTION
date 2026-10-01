@@ -19,7 +19,10 @@ Imports:
     cli (>= 3.6.0)
 Suggests:
     quarto,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
 Config/testthat/edition: 3
+VignetteBuilder: knitr
 URL: https://github.com/JonPayneEA/reach.utils
 BugReports: https://github.com/JonPayneEA/reach.utils/issues
